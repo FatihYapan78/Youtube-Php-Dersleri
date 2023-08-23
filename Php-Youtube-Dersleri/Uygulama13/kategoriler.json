@@ -1,0 +1,22 @@
+[
+    {
+        "kategoriAdi": "Web Progralama",
+        "aktif": true
+    },
+    {
+        "kategoriAdi": "Front-End",
+        "aktif": false
+    },
+    {
+        "kategoriAdi": "Back-End",
+        "aktif": false
+    },
+    {
+        "kategoriAdi": "Veri Analizi",
+        "aktif": false
+    },
+    {
+        "kategoriAdi": "Mobil Uygulama",
+        "aktif": false
+    }
+]
