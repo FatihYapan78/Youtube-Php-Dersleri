@@ -1,7 +1,10 @@
 <?php 
     require "libs/variables.php";
     require "libs/function.php";
-
+    session_start();
+    if(!isAdmin()){
+        header("Location: index.php");
+    }
 ?>
 
 <?php include "partials/_message.php"?>

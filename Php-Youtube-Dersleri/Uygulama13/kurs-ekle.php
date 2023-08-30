@@ -12,6 +12,7 @@ session_start();
     $baslik = $baslikError =  "";
     $altbaslik = $altbaslikError =  "";
     $resim = $resimError =  "";
+    $aciklama = $aciklamaError =  "";
     
     if($_SERVER["REQUEST_METHOD"]== "POST"){
 
@@ -27,16 +28,22 @@ session_start();
         else{
             $altbaslik = form_control($_POST["altbaslik"]);
         }
+        if(empty($_POST["aciklama"])){
+            $aciklamaError = "aciklama Adı Alanı Zorunludur.";
+        }
+        else{
+            $aciklama = form_control($_POST["aciklama"]);
+        }
         if(empty($_FILES["resim"]["name"])){
-            $kategoriError = "Kategori Adı Alanı Zorunludur.";
+            $resimError = "Kategori Adı Alanı Zorunludur.";
         }
         else{
             ResimYükle($_FILES["resim"]);
             $resim = $_FILES["resim"]["name"];
         }
 
-        if(empty($baslikError) && empty($altbaslikError) && empty($resimError)){
-            KursEkle($baslik,$altbaslik,$resim);
+        if(empty($baslikError) && empty($altbaslikError) && empty($resimError) && empty($aciklamaError)){
+            KursEkle($baslik,$altbaslik,$aciklama,$resim);
             $_SESSION["message"] = $baslik." isimli kategori eklendi.";
             $_SESSION["type"] = "success";
             header("Location: kurslar.php");
@@ -61,6 +68,12 @@ session_start();
                         <div class="text-danger"><?php echo $altbaslikError?></div>
                     </div>
                     <div class="mb-3">
+                        <label for="aciklama">Açıklama</label>
+                        <textarea type="text" name="aciklama" class="form-control"><?php echo $aciklama?></textarea>
+                        <div class="text-danger"><?php echo $aciklamaError?>
+                    </div>
+                    </div>
+                    <div class="mb-3">
                         <label for="resim">Resim</label>
                         <input type="file" name="resim" class="form-control" value="<?php echo $resim?>">
                         <div class="text-danger"><?php echo $resimError?></div>
@@ -73,4 +86,5 @@ session_start();
            </div>
         </div>
 
+        <?php include "partials/_editor.php"?>
         <?php include "partials/_footer.php"?>

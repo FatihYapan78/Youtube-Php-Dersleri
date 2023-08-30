@@ -1,4 +1,5 @@
 <?php 
+    include "libs/connection.php";
     require "libs/variables.php";
     require "libs/function.php";
 
@@ -8,13 +9,18 @@
 <?php include "partials/_navbar.php"?>
 
 <?php
-    $username = $email = $city = $password = $password2 = "";
-    $usernameError = $emailError = $cityError = $passwordError = $password2Error = $hobbiesError = "";
-    $hobbies = [];
-    if($_SERVER["REQUEST_METHOD"]== "POST"){
+    $username = $email = $password = $password2 = "";
+    $usernameError = $emailError = $passwordError = $password2Error =  "";
+    if($_SERVER["REQUEST_METHOD"] == "POST"){
 
         if(empty($_POST["username"])){
             $usernameError = "Kullanıcı Adı Alanı Zorunludur.";
+        }
+        elseif(preg_match('/^[A-Za-z]{1}[A-Za-z0-9]{5-31}$/', $_POST["username"])){
+            $usernameError = "Kullanıcı Adı Harf ve Rakamlardan oluşmalıdır.";
+        }
+        elseif(strlen($_POST["username"]) < 5){
+            $usernameError = "Kullanıcı 5 karakterden uzun olmalıdır.";
         }
         else{
             $username = form_control($_POST["username"]);
@@ -23,24 +29,12 @@
         if(empty($_POST["email"])){
             $emailError = "E-Mail Alanı Zorunludur.";
         }
+        elseif(!filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)){
+            $emailError = "E-Mail Hatalıdır.";
+        }
         else{
             $email = form_control($_POST["email"]);
         }
-
-        if($_POST["sehir"] == -1){
-            $cityError = "Şehir Alanı Zorunludur.";
-        }
-        else{
-            $city = $_POST["sehir"];
-        }
-
-        if(!isset($_POST["hobbies"])){
-            $hobbiesError = "Şehir Alanı Zorunludur.";
-        }
-        else{
-            $hobbies = $_POST["hobbies"];
-        }
-
         if(empty($_POST["password"])){
             $passwordError = "Password Alanı Zorunludur.";
         }
@@ -54,10 +48,31 @@
         else{
             $password2 = form_control($_POST["password2"]);
         }
+    
+
+    if(empty($usernameError) && empty($emailError) && empty($passwordError) && empty($passwrod2Error)){
+        $query = "SELECT * FROM users WHERE username = ? OR email = ?";
+        $stmt = mysqli_prepare($baglanti,$query);
+        mysqli_stmt_bind_param($stmt,"ss",$username,$email);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        if(mysqli_num_rows($result) == 0){
+            $password = password_hash($password, PASSWORD_DEFAULT);
+            mysqli_stmt_close($stmt);
+
+            $query = "INSERT INTO users(username,email,password) VALUE(?,?,?)";;
+            if($stmt = mysqli_prepare($baglanti,$query)){
+                mysqli_stmt_bind_param($stmt,"sss",$username,$email,$password);
+                mysqli_stmt_execute($stmt);
+                header("Location: login.php");
+            }
+        }
+        else{
+            $usernameError = "Bu Kullanıcı Adı ve E-Posta adresi başka bir kullanıcı tarafından kullanılıyor.";
+        }
     }
-
-
-
+}
 
 
 ?>
@@ -65,7 +80,7 @@
         <div class="container my-3">
            <div class="row">
             <div class="col-12">
-                <form action="register.php" method="post">
+                <form method="post">
                     <div class="mb-3">
                         <label for="username">Kullanıcı Adı</label>
                         <input type="text" name="username" class="form-control" value="<?php echo $username?>">
@@ -75,26 +90,6 @@
                         <label for="email">E-mail</label>
                         <input type="text" name="email" class="form-control" value="<?php echo $email?>">
                         <div class="text-danger"><?php echo $emailError?></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="sehir">Şehir</label>
-                        <select name="sehir" class="form-select">
-                            <option value="-1" selected>Şehir Seç</option>
-                            <?php foreach($sehirler as $plaka => $sehir): ?>
-                                <option value="<?php echo $plaka?>" <?php echo $city == $plaka ? "selected":"" ?>><?php echo $sehir?></option>
-                            <?php endforeach?>
-                        </select>
-                        <div class="text-danger"><?php echo $cityError?></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="hobiler">Hobiler</label>
-                        <?php foreach($hobiler as $id => $hobi): ?>
-                            <div class="form-check">
-                                <input type="checkbox" name="hobbies[]" id="hobiler_<?php echo $id?>" value="<?php echo $hobi?>" <?php if(in_array($hobi, $hobbies)) echo "checked"?>>
-                                <label for="hobiler_<?php echo $id?>" class="form-check-label"><?php echo $hobi?></label>
-                            </div>
-                        <?php endforeach?>
-                        <div class="text-danger"><?php echo $hobbiesError?></div>
                     </div>
                     <div class="mb-3">
                         <label for="password">Parola</label>

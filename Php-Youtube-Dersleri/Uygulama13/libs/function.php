@@ -1,4 +1,12 @@
 <?php
+function isLoggedIn(){
+    return (isset($_SESSION["loggedIn"]) && $_SESSION["loggedIn"] == true);
+}
+
+function isAdmin(){
+    return (isLoggedIn() && isset($_SESSION["user_type"]) && $_SESSION["user_type"] == "admin");
+}
+
 
 function KategoriGetir(){
     include "connection.php";
@@ -66,12 +74,62 @@ function KursGetir(){
     return $sonuc;
 }
 
-function KursEkle(string $baslik,string $altbaslik,string $resim,$yorumSayisi=0,$begeniSayisi=0,$onay=1){
+function KursFiltreleme($categoryId,$keyword,$page){
     include "connection.php";
 
-    $query = "INSERT INTO course(baslik,altbaslik,resim,yorumSayisi,begeniSayisi,onay) VALUES (?,?,?,?,?,?)";
+    $pagekurscount = 2;
+    $offset = ($page - 1) * $pagekurscount; // 2 * 2 => 4
+    $query = "";
+    if(!empty($categoryId)){
+        $query = "from course_category k INNER JOIN course c ON k.kurs_id = c.id WHERE k.kategori_id = $categoryId";
+    }
+    else{
+        $query = "FROM course WHERE onay=1";
+    }
+
+    if(!empty($keyword)){
+        $query .= " and baslik LIKE '%$keyword%' or altbaslik LIKE '%$keyword%'";
+    }
+
+    $toplamkurs = "SELECT COUNT(*)".$query;
+    $count_data = mysqli_query($baglanti,$toplamkurs);
+    $count = mysqli_fetch_array($count_data)[0];
+    $toplamSayfa = ceil($count / $pagekurscount);
+
+    $sql = "SELECT *".$query." LIMIT $offset, $pagekurscount";
+
+    $sonuc = mysqli_query($baglanti,$sql);
+    mysqli_close($baglanti);
+    return array(
+        "toplamSayfa" => $toplamSayfa,
+        "data" => $sonuc,
+    );
+}
+
+function KategoriGetirKursId($courseId){
+    include "connection.php";
+
+    $query = "SELECT * from course_category k INNER JOIN category c ON k.Kategori_id = c.id WHERE k.kurs_id = $courseId";
+    $sonuc = mysqli_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+}
+
+function KursGetirKategoriId($kategoriId){
+    include "connection.php";
+
+    $query = "SELECT * from course_category k INNER JOIN course c ON k.kurs_id = c.id WHERE k.kategori_id = $kategoriId";
+    $sonuc = mysqli_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+}
+
+function KursEkle(string $baslik,string $altbaslik,string $aciklama,string $resim,$yorumSayisi=0,$begeniSayisi=0,$onay=1){
+    include "connection.php";
+
+    $query = "INSERT INTO course(baslik,altbaslik,aciklama,resim,yorumSayisi,begeniSayisi,onay) VALUES (?,?,?,?,?,?,?)";
     $stmt = mysqli_prepare($baglanti,$query);
-    mysqli_stmt_bind_param($stmt,"sssiii",$baslik,$altbaslik, $resim,$yorumSayisi,$begeniSayisi,$onay);
+    mysqli_stmt_bind_param($stmt,"ssssiii",$baslik,$altbaslik,$aciklama,$resim,$yorumSayisi,$begeniSayisi,$onay);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_close($stmt);
     return $stmt;
@@ -88,18 +146,54 @@ function ResimYükle(array $file){
     }
 }
 
-function KursDüzenle(int $id,string $baslik,string $altbaslik,string $resim,int $onay){
+function KursDüzenle(int $id,string $baslik,string $altbaslik,string $aciklama, string $resim,int $onay){
     include "connection.php";
 
-    $query = "UPDATE course SET baslik='$baslik',altbaslik='$altbaslik',resim='$resim',onay=$onay WHERE id=$id";
+    $query = "UPDATE course SET baslik='$baslik',altbaslik='$altbaslik',aciklama='$aciklama', resim='$resim',onay=$onay WHERE id=$id";
     $sonuc = mysqli_query($baglanti,$query);
     mysqli_close($baglanti);
     return $sonuc;
 }
 
+function KursKategoriSil($id){
+    include "connection.php";
 
+    $query = "DELETE FROM course_category WHERE kurs_id=$id";
+    $sonuc = mysqli_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+}
 
+function KursKategoriEkle(int $id,array $kategoriler){
+    include "connection.php";
+    $query = "";
+    foreach($kategoriler as $kategori){
+        $query .= "INSERT INTO course_category(kurs_id,kategori_id) VALUES ($id,$kategori);";
+    }
+    $sonuc = mysqli_multi_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+}
 
+function KursSil(int $id){
+    include "connection.php";
+
+    $query = "DELETE FROM course WHERE id=$id";
+    $sonuc = mysqli_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+}
+
+function KursGetirKeyword($q){
+
+    include "connection.php";
+
+    $query = "SELECT * from course WHERE baslik LIKE '%$q%' or altbaslik LIKE '%$q%'";
+    $sonuc = mysqli_query($baglanti,$query);
+    mysqli_close($baglanti);
+    return $sonuc;
+
+}
 
 
 

@@ -1,33 +1,10 @@
 <?php 
     require "libs/variables.php";
     require "libs/function.php";
-
-    $kategori = fopen("kategoriler.json","r");
-    $size = filesize("kategoriler.json");
-    $kategori_data = json_decode(fread($kategori,$size),true);
-    fclose($kategori);
-
-    $kurs= fopen("kurslar.json","r");
-    $size = filesize("kurslar.json");
-    $kurs_data = json_decode(fread($kurs,$size),true);
-    fclose($kurs);
-
+    session_start();
 
 ?>
 
-<?php
-
-    if($_SERVER["REQUEST_METHOD"]=="POST"){
-
-        $title = $_POST["title"];
-        $subtitle = $_POST["subtitle"];
-        $image = $_POST["image"];
-        $dateAdd = $_POST["dateAdd"];
-
-        kursEkle($title, $subtitle, $image, $dateAdd);
-        header("Location: index.php");
-    };
-?>
 
 
 

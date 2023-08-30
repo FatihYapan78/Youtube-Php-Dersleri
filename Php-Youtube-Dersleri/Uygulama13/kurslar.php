@@ -1,7 +1,10 @@
 <?php 
     require "libs/variables.php";
     require "libs/function.php";
-
+    session_start();
+    if(!isAdmin()){
+        header("Location: index.php");
+    }
 ?>
 
 <?php include "partials/_message.php"?>
@@ -17,6 +20,7 @@
                         <tr>
                             <th style="width: 50px;">Id</th>
                             <th>Başlık</th>
+                            <th>Kategoriler</th>
                             <th>Alt Başlık</th>
                             <th>Resim</th>
                             <th>Yayın Tarihi</th>
@@ -31,6 +35,27 @@
                         <tr>
                                 <td><?php echo $kurs["id"]?></td>
                                 <td><?php echo $kurs["baslik"]?></td>
+                                <td>
+                                    <?php
+                                        echo "<ul>";
+                                        $result = KategoriGetirKursId($kurs["id"]);
+
+                                        if(mysqli_num_rows($result) > 0){
+                                            while($kategori = mysqli_fetch_assoc($result)){
+                                                echo "<li>".$kategori["kategoriAdi"]."</li>";
+                                            }
+                                        }
+                                        else{
+                                            echo "<li>Kategori Seçilmedi</li>";
+                                        }
+                                        echo "</ul>";
+                                    
+                                    
+                                    ?>
+
+
+
+                                </td>
                                 <td><?php echo $kurs["altbaslik"]?></td>
                                 <td><img src="img/<?php echo $kurs["resim"]?>" style="width: 100px;"></td>
                                 <td><?php echo $kurs["yayinTarihi"]?></td>

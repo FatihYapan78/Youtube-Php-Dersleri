@@ -12,9 +12,12 @@ session_start();
     $id = $_GET["id"];
     $sonuc = getKursId($id);
     $secilenKurs = mysqli_fetch_assoc($sonuc);
+
     $baslik = $baslikError =  "";
     $altbaslik = $altbaslikError =  "";
+    $aciklama = $aciklamaError =  "";
     $resim = $resimError =  "";
+    $kategoriError = $kategori = "";
     $onay = $onayError =  "";
     
     if($_SERVER["REQUEST_METHOD"]== "POST"){
@@ -31,6 +34,12 @@ session_start();
         else{
             $altbaslik = form_control($_POST["altbaslik"]);
         }
+        if(empty($_POST["aciklama"])){
+            $aciklamaError = "aciklama Adı Alanı Zorunludur.";
+        }
+        else{
+            $aciklama = form_control($_POST["aciklama"]);
+        }
         if(empty($_FILES["resim"]["name"])){
             $resim = $secilenKurs["resim"];
         }
@@ -45,11 +54,22 @@ session_start();
             $onay = 0;
         }
 
-        if(empty($baslikError) && empty($altbaslikError)){
-            KursDüzenle($id,$baslik,$altbaslik,$resim,$onay);
-            $_SESSION["message"] = $baslik." isimli kategori eklendi.";
-            $_SESSION["type"] = "success";
-            header("Location: kurslar.php");
+        $kategoriler = [];
+
+        if(isset($_POST["kategoriler"])){
+            $kategoriler = $_POST["kategoriler"];
+        }
+
+        if(empty($baslikError) && empty($altbaslikError) && empty($resimError) && empty($aciklamaError)){
+            if(KursDüzenle($id,$baslik,$altbaslik,$aciklama,$resim,$onay)){
+                KursKategoriSil($id);
+                if(count($kategoriler) > 0){
+                    KursKategoriEkle($id,$kategoriler);
+                }
+                $_SESSION["message"] = $baslik." isimli kategori eklendi.";
+                $_SESSION["type"] = "success";
+                header("Location: kurslar.php");
+            }
         }
 
     }
@@ -71,9 +91,42 @@ session_start();
                         <div class="text-danger"><?php echo $altbaslikError?></div>
                     </div>
                     <div class="mb-3">
+                        <label for="aciklama">Açıklama</label>
+                        <textarea type="text" name="aciklama" class="form-control"><?php echo $secilenKurs["aciklama"]?></textarea>
+                        <div class="text-danger"><?php echo $aciklamaError?>
+                    </div>
+                    </div>
+                    <div class="mb-3">
                         <label for="resim" class="d-block">Resim</label>
                         <img src="img/<?php echo $secilenKurs["resim"]?>" style="width: 150px;">
                         <input type="file" name="resim" class="form-control" value="<?php echo $secilenKurs["resim"]?>">
+                    </div>
+                    <div class="mb-3">
+                        <label for="kategori" class="form-label d-block">Kategoriler</label>
+                            <?php foreach(KategoriGetir() as $c):?>
+                                <div class="form-check">
+                                <label for="kategori_<?php echo $c["id"]?>"><?php echo $c["kategoriAdi"]?></label>
+                                <input type="checkbox" name="kategoriler[]" value="<?php echo $c["id"]?>" id="kategori_<?php echo $c["id"]?>" class="form-check-input border border-1 border-dark"
+                                
+                                <?php 
+                                    $isChecked = false;
+                                    $seciliKategoriler = KategoriGetirKursId($secilenKurs["id"]);
+
+                                    foreach($seciliKategoriler as $secilenKategori){
+                                        if($secilenKategori["id"] == $c["id"]){
+                                            $isChecked = true;
+                                        }
+                                    }
+                                    if($isChecked){
+                                        echo "checked";
+                                    }
+                                
+                                ?>
+                                
+                                
+                                >
+                                </div>
+                            <?php endforeach?>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
@@ -91,4 +144,5 @@ session_start();
            </div>
         </div>
 
+        <?php include "partials/_editor.php"?>
         <?php include "partials/_footer.php"?>
